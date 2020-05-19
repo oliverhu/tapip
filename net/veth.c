@@ -64,6 +64,7 @@ static int veth_dev_init(struct netdev *dev)
 	dev->net_mask = FAKE_NETMASK;
 	hwacpy(dev->net_hwaddr, FAKE_HWADDR);
 	dbg("%s ip address: " IPFMT, dev->net_name, ipfmt(dev->net_ipaddr));
+	dbg("%s TEST address: " IPFMT, "TEST", ipfmt(dev->net_ipaddr));
 	dbg("%s hw address: " MACFMT, dev->net_name, macfmt(dev->net_hwaddr));
 	/* net stats have been zero */
 	return 0;
@@ -125,8 +126,11 @@ void veth_poll(void)
 		pfd.revents = 0;
 		/* one event, infinite time */
 		ret = poll(&pfd, 1, -1);
-		if (ret <= 0)
+		if (ret <= 0) {
 			perrx("poll /dev/net/tun");
+		} else {
+			dbg("polled a message.");
+		}
 		/* get a packet and handle it */
 		veth_rx();
 	}

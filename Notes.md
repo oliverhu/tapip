@@ -1,0 +1,147 @@
+Very useful project to understand how tcp/ip works at source code level. Better than reading the TCP/IP Illustrated series out of no where.. it is appararently simpler than reading the Linux source code, but this project is more complicated than I thought.. taking some learning notes.
+
+Some useful docs are under /doc folder.
+
+```
+$ cloc ./
+      80 text files.
+      78 unique files.
+       7 files ignored.
+
+github.com/AlDanial/cloc v 1.82  T=0.05 s (1488.4 files/s, 163686.6 lines/s)
+-------------------------------------------------------------------------------
+Language                     files          blank        comment           code
+-------------------------------------------------------------------------------
+C                               37            525            749           4913
+C/C++ Header                    22            229             82           1234
+make                            10             45              4            184
+Bourne Shell                     2              9             32             49
+Markdown                         1              8              0             44
+JSON                             2              0              0             31
+-------------------------------------------------------------------------------
+SUM:                            74            816            867           6455
+-------------------------------------------------------------------------------
+```
+
+# ip_frag.c
+
+> IP fragmentation
+
+IP fragmentation is an Internet Protocol (IP) process that breaks packets into smaller pieces (fragments), so that the resulting pieces can pass through a link with a smaller maximum transmission unit (MTU) than the original packet size. The fragments are reassembled by the receiving host.
+
+# loop.c
+
+> Loop device
+
+`eno1` is the onboard Ethernet (wired) adapter.
+
+`lo` is a loopback device. You can imagine it as a virtual network device that is on all systems, even if they aren't connected to any network. It has an IP address of 127.0.0.1 and can be used to access network services locally. For example, if you run a webserver on your machine and browse to it with Firefox or Chromium on the same machine, then it will go via this network device.
+
+There is no wi-fi adapter listed. lspci and lsusb may help you find them in the first place at which point you need to figure out why it isn't working.
+
+# veth.c
+
+> virtual ethernet device
+
+Very important file. `veth_poll()` is the function to poll event sent to the veth device.
+Try
+```
+@@ -125,8 +126,11 @@ void veth_poll(void)
+                pfd.revents = 0;
+                /* one event, infinite time */
+                ret = poll(&pfd, 1, -1);
+-               if (ret <= 0)
++               if (ret <= 0) {
+                        perrx("poll /dev/net/tun");
++               } else {
++                       dbg("polled a message.");
++               }
+                /* get a packet and handle it */
+                veth_rx();
+        }
+```
+and ping 10.0.0.1. You will see "polled a message" for every icmp message. After each package received, `veth_rx()` will process the packet.
+
+The size of the packet will be the net_mtu size + the header size of an ethernet frame, thus `network_device-> net_mtu + ETH_HRD_SZ`.
+
+`calloc()` gives you a zero-initialized buffer, while `malloc()` leaves the memory uninitialized.
+
+When we compile from scratch, we saw this warning:
+```
+pkb.c: In function ‘alloc_pkb’:
+pkb.c:38:12: warning: taking address of packed member of ‘struct pkbuf’ may result in an unaligned pointer value [-Waddress-of-packed-member]
+   38 |  list_init(&pkb->pk_list);
+```
+What is a packed member??
+```
+What is Packing
+Packing, on the other hand prevents compiler from doing padding means remove the unallocated space allocated by structure.
+
+In case of Linux we use __attribute__((__packed__))  to pack structure.
+In case of Windows (specially in Dev c++) use  # pragma pack (1) to pack structure.
+firmcodes.com/structure-padding-and-packing-in-c-example/
+```
+Not sure how to fix besides disabling packed here.. tba.
+
+After `pkb` is allocated, `veth_recv()` is called to read the data from tap device (note tap is ethernet level device, tun is ip level device).
+
+The package is then passed to the upper ip layer via `net_in(veth, pkb)`
+
+In `net_in()` method, it calls into
+
+# net.c
+
+> Ethernet -> IP level transition
+
+`eth_init()` casts the pkb's data into `ether` struct, which represents an ethernet frame. By comparing some bits, we know if the package is PKT_BROADCAST or PKT_MULTICAST. Based on ethernet proto type, we can parse the eframe in either ARP or IP format (there are more, but the ones we care are ip and arp).
+
+In the `./tapip` shell, typing `debug ip` to get into l2 debug mode. When we ping 10.0.0.1 from localhost, you will see
+```
+[17340]ip_in ip 10.0.0.2 -> 10.0.0.1(20/84 bytes)
+[17340]rt_output ip Find route entry from 10.0.0.1 to 10.0.0.2
+[17340]ip_send_out ip 10.0.0.1 -> 10.0.0.2(20/84 bytes)
+[17340]ip_in ip 10.0.0.2 -> 239.255.255.250(20/200 bytes)
+[17340]ip_forward ip 10.0.0.2 -> 239.255.255.250(20/200 bytes) forwarding
+[17340]ip_in ip 10.0.0.2 -> 10.0.0.1(20/84 bytes)
+[17340]rt_output ip Find route entry from 10.0.0.1 to 10.0.0.2
+[17340]ip_send_out ip 10.0.0.1 -> 10.0.0.2(20/84 bytes)
+```
+Localhost and our tap device are connected via a 10.0.0.1/24 mask. When you run `ifconfig` in localhost, you get:
+```
+tap0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 10.0.0.2  netmask 255.255.255.0  broadcast 10.0.0.255
+        inet6 fe80::9c06:4ff:feb4:79a  prefixlen 64  scopeid 0x20<link>
+        ether 9e:06:04:b4:07:9a  txqueuelen 1000  (Ethernet)
+        RX packets 31  bytes 3270 (3.2 KB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 171  bytes 31574 (31.5 KB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+```
+In the tapip shell, you type `ifconfig` and get:
+```
+[net shell]: ifconfig
+lo        HWaddr 00:00:00:00:00:00
+          IPaddr 127.0.0.1
+          mtu 1500
+          RX packet:0 bytes:0 errors:0
+          TX packet:0 bytes:0 errors:0
+veth      HWaddr 00:34:45:67:89:ab
+          IPaddr 10.0.0.1
+          mtu 1500
+          RX packet:98 bytes:19310 errors:0
+          TX packet:10 bytes:841 errors:0
+
+--- NOTE: this nic isnt in tapip, it is in remote machine ---
+tap0      HWaddr 9e:06:04:b4:07:9a
+          IPaddr 10.0.0.2
+          mtu 1500
+          RX packet:0 bytes:0 errors:0
+          TX packet:0 bytes:0 errors:0
+```
+
+After understanding the package type based on the ethernet prototype, we can finally move up to the next layer. ip & arp.
+
+# ip_in.c
+
+> ip layer
+
