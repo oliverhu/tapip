@@ -145,3 +145,12 @@ After understanding the package type based on the ethernet prototype, we can fin
 
 > ip layer
 
+`ip_in(struct netdev *, struct pkbuf *)` first does some sanity check and use nothl to convert the bytes between network to host. The package was later sent forwardto `ip_recv_route(pkbuf *)`. I don't know what does `route.c` do here, but it checks against a linked list and make sure the ip_dst of the package is for our host. If yes, invoke `ip_recv_local(pkb)` otherwise `ip_forward(pkb)`. Not sure how forwarding works here, but it seems the default TOP 1 topology doesn't support forwarding. We will look at ip_forward function later. The package will later be cast into an `ip` struct.
+
+We will check if this ip package is a fragment or via checking the `fragment offset` field
+
+*Fragment Offset*
+
+The fragment offset field is measured in units of eight-byte blocks. It is 13 bits long and specifies the offset of a particular fragment relative to the beginning of the original unfragmented IP datagram. The first fragment has an offset of zero. This allows a maximum offset of (213 – 1) × 8 = 65,528 bytes, which would exceed the maximum IP packet length of 65,535 bytes with the header length included (65,528 + 20 = 65,548 bytes).
+
+_ip_frag.c_ will lookup and assumble the complete ip packet and return full ip package if a complete (by checking if frag_flags matches 0x00000001) ip packet is assembled, otherwise return NULL. Next we will move up to the transport layer.
