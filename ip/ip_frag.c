@@ -91,6 +91,7 @@ struct pkbuf *reass_frag(struct fragment *frag)
 		p += fraghdr->ip_len - hlen;
 	}
 	ipdbg("resassembly success(%d/%d bytes)", hlen, len);
+	ipdbg("->%s, %d", (char*)pkb->pk_data, pkb->pk_len);
 out:
 	delete_frag(frag);
 	return pkb;
@@ -190,7 +191,7 @@ struct pkbuf *ip_reass(struct pkbuf *pkb)
 {
 	struct ip *iphdr = pkb2ip(pkb);
 	struct fragment *frag;
-
+	// dbg("test");
 	ipdbg("ID:%d RS:%d DF:%d MF:%d OFF:%d bytes size:%d bytes",
 			iphdr->ip_id,
 			(iphdr->ip_fragoff & IP_FRAG_RS) ? 1 : 0,
@@ -211,7 +212,6 @@ struct pkbuf *ip_reass(struct pkbuf *pkb)
 		pkb = reass_frag(frag);
 	else
 		pkb = NULL;
-
 	return pkb;
 }
 

@@ -14,7 +14,9 @@ void ip_recv_local(struct pkbuf *pkb)
 	struct ip *iphdr = pkb2ip(pkb);
 
 	/* fragment reassambly */
+	// dbg("received a ip packet");
 	if (iphdr->ip_fragoff & (IP_FRAG_OFF | IP_FRAG_MF)) {
+		// dbg("received a fragement ip packet");
 		if (iphdr->ip_fragoff & IP_FRAG_DF) {
 			ipdbg("error fragment");
 			free_pkb(pkb);

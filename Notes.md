@@ -154,3 +154,30 @@ We will check if this ip package is a fragment or via checking the `fragment off
 The fragment offset field is measured in units of eight-byte blocks. It is 13 bits long and specifies the offset of a particular fragment relative to the beginning of the original unfragmented IP datagram. The first fragment has an offset of zero. This allows a maximum offset of (213 – 1) × 8 = 65,528 bytes, which would exceed the maximum IP packet length of 65,535 bytes with the header length included (65,528 + 20 = 65,548 bytes).
 
 _ip_frag.c_ will lookup and assumble the complete ip packet and return full ip package if a complete (by checking if frag_flags matches 0x00000001) ip packet is assembled, otherwise return NULL. Next we will move up to the transport layer.
+
+To test functions in `ip_frag.c`, we can write a few lines of Pythons script:
+```
+>>> import socket
+>>> s = socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+>>> s.sendto('helloworld' * 10000,('10.0.0.2',12345))
+```
+
+In the `tapip` shell, you will see (in debug ip mode):
+```
+[net shell]: debug ip
+enter ^C to exit debug mode
+[54514]ip_in ip 10.0.0.2 -> 10.0.0.1(20/1500 bytes)
+[54514]ip_reass ip ID:7262 RS:0 DF:0 MF:1 OFF:0 bytes size:1500 bytes
+[54514]ip_in ip 10.0.0.2 -> 10.0.0.1(20/1500 bytes)
+[54514]ip_reass ip ID:7262 RS:0 DF:0 MF:1 OFF:1480 bytes size:1500 bytes
+[54514]ip_in ip 10.0.0.2 -> 10.0.0.1(20/1500 bytes)
+[54514]ip_reass ip ID:7262 RS:0 DF:0 MF:1 OFF:2960 bytes size:1500 bytes
+[54514]ip_in ip 10.0.0.2 -> 10.0.0.1(20/1500 bytes)
+[54514]ip_reass ip ID:7262 RS:0 DF:0 MF:1 OFF:4440 bytes size:1500 bytes
+[54514]ip_in ip 10.0.0.2 -> 10.0.0.1(20/1500 bytes)
+[54514]ip_reass ip ID:7262 RS:0 DF:0 MF:1 OFF:5920 bytes size:1500 bytes
+[54514]ip_in ip 10.0.0.2 -> 10.0.0.1(20/1418 bytes)
+[54514]ip_reass ip ID:7262 RS:0 DF:0 MF:0 OFF:7400 bytes size:1418 bytes
+[54514]reass_frag ip resassembly success(20/8818 bytes)
+```
+`pkbdbg(pkbuf* )` is a useful function to print the details of a pkbuf structure.

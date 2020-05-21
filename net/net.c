@@ -57,6 +57,8 @@ void net_in(struct netdev *dev, struct pkbuf *pkb)
 		arp_in(dev, pkb);
 		break;
 	case ETH_P_IP:
+		// dbg("debug pkb -> %s", pkb->pk_data + 21);
+		pkbdbg(pkb);
 		ip_in(dev, pkb);
 		break;
 	default:

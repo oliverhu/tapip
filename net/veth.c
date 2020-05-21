@@ -129,7 +129,7 @@ void veth_poll(void)
 		if (ret <= 0) {
 			perrx("poll /dev/net/tun");
 		} else {
-			dbg("polled a message.");
+			// dbg("polled a message.");
 		}
 		/* get a packet and handle it */
 		veth_rx();
