@@ -71,6 +71,11 @@ static void tcp_recv(struct pkbuf *pkb, struct ip *iphdr, struct tcp *tcphdr)
 	/* Should we use net device to match a connection? */
 	sk = tcp_lookup_sock(iphdr->ip_src, iphdr->ip_dst,
 				tcphdr->src, tcphdr->dst);
+	if (sk) {
+		dbg("found socket.");
+	} else {
+		dbg("creating socket");
+	}
 	tcp_process(pkb, &seg, sk);
 	if (sk)
 		free_sock(sk);
@@ -80,6 +85,7 @@ void tcp_in(struct pkbuf *pkb)
 {
 	struct ip *iphdr = pkb2ip(pkb);
 	struct tcp *tcphdr = ip2tcp(iphdr);
+	dbg("diff size -> %d", (void*)tcphdr - (void*)iphdr);
 	int tcplen = ipdlen(iphdr);
 
 	tcpdbg("%d bytes, real %d bytes",tcplen, tcphlen(tcphdr));

@@ -3,7 +3,7 @@
  */
 #ifndef __LIST_H
 #define __LIST_H
-
+#include "lib.h"
 #include "compile.h"
 
 #ifndef NULL
@@ -26,6 +26,7 @@ static _inline void list_init(struct list_head *head)
 static _inline void __list_add(struct list_head *list,
 			struct list_head *prev, struct list_head *next)
 {
+	dbg("Add to list!");
 	list->prev = prev;
 	list->next = next;
 	next->prev = list;
@@ -149,6 +150,7 @@ static _inline void hlist_del(struct hlist_node *n)
 
 static _inline void hlist_add_head(struct hlist_node *n, struct hlist_head *h)
 {
+	dbg("Add to hlist!");
 	n->next = h->first;
 	n->pprev = &h->first;
 	if (h->first)
@@ -159,6 +161,7 @@ static _inline void hlist_add_head(struct hlist_node *n, struct hlist_head *h)
 /* add @n before @next */
 static _inline void hlist_add_before(struct hlist_node *n, struct hlist_node *next)
 {
+	dbg("Add to hlist before!");
 	n->next = next;
 	n->pprev = next->pprev;
 	*next->pprev = n;
@@ -168,6 +171,7 @@ static _inline void hlist_add_before(struct hlist_node *n, struct hlist_node *ne
 /* add @next after @n */
 static _inline void hlist_add_after(struct hlist_node *n, struct hlist_node *next)
 {
+	dbg("Add to hlist after!");
 	next->next = n->next;
 	next->pprev = &n->next;
 	if (n->next)

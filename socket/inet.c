@@ -30,6 +30,7 @@ static struct inet_type inet_type_table[SOCK_MAX] = {
 
 static int inet_socket(struct socket *sock, int protocol)
 {
+	dbg("Inet socket!");
 	struct inet_type *inet;
 	struct sock *sk;
 	int type;
@@ -55,6 +56,7 @@ static int inet_socket(struct socket *sock, int protocol)
 	/* only used by raw ip */
 	if (sk->hash && sk->ops->hash)
 		sk->ops->hash(sk);
+	dbg("inet socket %d, %d", sk->sk_saddr, sk->sk_sport);
 	return 0;
 }
 
@@ -135,6 +137,7 @@ static int inet_bind(struct socket *sock, struct sock_addr *skaddr)
 	} else {
 		sk->sk_sport = skaddr->src_port;
 	}
+	dbg("Bind socket: %d, %d", sk->sk_saddr, _ntohs(sk->sk_sport));
 	/* bind success */
 	err = 0;
 	/* clear connection */

@@ -9,6 +9,7 @@ int free_socks = 0;
 void sock_add_hash(struct sock *sk, struct hlist_head *head)
 {
 	get_sock(sk);
+	dbg("sock!");
 	hlist_add_head(&sk->hash_list, head);
 }
 

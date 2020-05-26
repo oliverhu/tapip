@@ -29,6 +29,7 @@ static void raw_unhash(struct sock *sk)
 static int raw_hash(struct sock *sk)
 {
 	struct hlist_head *hash_head = &raw_hash_table[raw_hash_func(sk)];
+	dbg("Raw add socket.");
 	sock_add_hash(sk, hash_head);
 	return 0;
 }

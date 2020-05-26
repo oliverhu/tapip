@@ -18,8 +18,10 @@ static struct sock *tcp_lookup_sock_establish(unsigned int src, unsigned int dst
 		if (sk->sk_saddr == dst &&
 			sk->sk_daddr == src &&
 			sk->sk_sport == dst_port &&
-			sk->sk_dport == src_port)
-			return get_sock(sk);
+			sk->sk_dport == src_port) {
+				dbg("Found a socket from tcp_lookip");
+				return get_sock(sk);
+			}
 	}
 	return NULL;
 }
@@ -29,10 +31,14 @@ static struct sock *tcp_lookup_sock_listen(unsigned int addr, unsigned int nport
 	struct hlist_head *head = tcp_lhash_head(_ntohs(nport) & TCP_LHASH_MASK);
 	struct hlist_node *node;
 	struct sock *sk;
-
 	hlist_for_each_sock(sk, node, head) {
+		dbg("Socket list %d, %d", sk->sk_saddr, _ntohl(sk->sk_sport));
+	}
+	hlist_for_each_sock(sk, node, head) {
+		dbg("Socket list");
 		if ((!sk->sk_saddr || sk->sk_saddr == addr) &&
 			sk->sk_sport == nport)
+			dbg("Found a socket from lookup listen.");
 			return get_sock(sk);
 	}
 	return NULL;
@@ -44,8 +50,9 @@ struct sock *tcp_lookup_sock(unsigned int src, unsigned int dst,
 {
 	struct sock *sk;
 	sk = tcp_lookup_sock_establish(src, dst, src_port, dst_port);
-	if (!sk)
+	if (!sk) {
 		sk = tcp_lookup_sock_listen(dst, dst_port);
+	}
 	return sk;
 }
 
@@ -85,6 +92,8 @@ static unsigned short tcp_get_port(void)
 
 static void tcp_bhash(struct tcp_sock *tsk)
 {
+	dbg("Get tcp sock! %s, %s", tsk->sk.hash, tsk->sk.sk_dst);
+
 	get_tcp_sock(tsk);
 	hlist_add_head(&tsk->bhash_list, tcp_bhash_head(tsk->bhash));
 }
@@ -121,6 +130,7 @@ void tcp_unbhash(struct tcp_sock *tsk)
 
 int tcp_hash(struct sock *sk)
 {
+	dbg("tcp_sock hash");
 	struct tcp_sock *tsk = tcpsk(sk);
 	struct hlist_head *head;
 	unsigned int hash;
@@ -167,6 +177,7 @@ static int tcp_wait_connect(struct tcp_sock *tsk)
 
 static int tcp_connect(struct sock *sk, struct sock_addr *skaddr)
 {
+	dbg("tcp_connect!");
 	struct tcp_sock *tsk = tcpsk(sk);
 	int err;
 	if (tsk->state != TCP_CLOSED)
@@ -205,6 +216,7 @@ static int tcp_connect(struct sock *sk, struct sock_addr *skaddr)
 
 static int tcp_listen(struct sock *sk, int backlog)
 {
+	dbg("tcp listen");
 	struct tcp_sock *tsk = tcpsk(sk);
 	unsigned int oldstate = tsk->state;
 	if (!sk->sk_sport)	/* no bind */
@@ -423,6 +435,7 @@ int tcp_id;
 
 struct sock *tcp_alloc_sock(int protocol)
 {
+	dbg("Tcp allocate a sock!");
 	struct tcp_sock *tsk;
 	if (protocol && protocol != IP_P_TCP)
 		return NULL;

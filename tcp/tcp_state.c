@@ -47,6 +47,7 @@ unsigned int alloc_new_iss(void)
 static struct tcp_sock *tcp_listen_child_sock(struct tcp_sock *tsk,
 						struct tcp_segment *seg)
 {
+	dbg("tcp_listen_child.");
 	struct sock *newsk = tcp_alloc_sock(tsk->sk.protocol);
 	struct tcp_sock *newtsk = tcpsk(newsk);
 	tcp_set_state(newtsk, TCP_SYN_RECV);

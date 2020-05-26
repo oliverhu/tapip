@@ -181,3 +181,87 @@ enter ^C to exit debug mode
 [54514]reass_frag ip resassembly success(20/8818 bytes)
 ```
 `pkbdbg(pkbuf* )` is a useful function to print the details of a pkbuf structure.
+
+`https://github.com/oliverhu/tapip/blob/master/doc/test` contains a list of ways if we want to test tcp/udp connections.
+
+sock is the socket in the network stack domain, socket is the user facing part.
+
+`_ntohs` converts values between host and network byte order. We need to apply this function when we are trying to print out stuff.
+
+Turn on tcpstate debug to understand the state changes.
+
+```
+[net shell]: debug -n tcp tcpstate
+[net shell]: snc -d  -b 0.0.0.0:12345
+[36950]recv_packet (TCP): bind 0.0.0.0:12345
+[36950]recv_tcp_packet (TCP): listen with backlog:10
+
+[36949]tcp_in tcp 40 bytes, real 40 bytes
+[36949]tcp_segment_init tcp from 10.0.0.2:55072 to 10.0.0.1:12345	seq:3563457793(0:1) ack:0 SYN
+[36949]tcp_dbg_state tcpstate LISTEN
+[36949]tcp_listen tcpstate LISTEN
+[36949]tcp_listen tcpstate 1. check rst
+[36949]tcp_listen tcpstate 2. check ack
+[36949]tcp_listen tcpstate 3. check syn
+[36949]tcp_set_state tcpstate State from CLOSED to SYN-RECV
+[36949]tcp_send_synack tcp send SYN(12345679)/ACK(4096) [WIN -731509502] to 10.0.0.1:55072
+[36949]tcp_in tcp 20 bytes, real 20 bytes
+[36949]tcp_segment_init tcp from 10.0.0.2:55072 to 10.0.0.1:12345	seq:3563457794(0:0) ack:12345680 ACK
+[36949]tcp_dbg_state tcpstate SYN-RECV
+[36949]tcp_process tcpstate 1. check seq
+[36949]tcp_process tcpstate 2. check rst
+[36949]tcp_process tcpstate 3. NO check security and precedence
+[36949]tcp_process tcpstate 4. check syn
+[36949]tcp_process tcpstate 5. check ack
+[36949]tcp_synrecv_ack tcpstate Passive three-way handshake successes!
+[36949]tcp_set_state tcpstate State from SYN-RECV to ESTABLISHED
+[36949]tcp_process tcpstate 6. check urg
+[36949]tcp_process tcpstate 7. segment text
+[36949]tcp_process tcpstate 8. check fin
+[36950]recv_tcp_packet (TCP): Three-way handshake successes: from 10.0.0.2:55072
+
+[36949]tcp_in tcp 24 bytes, real 20 bytes
+[36949]tcp_segment_init tcp from 10.0.0.2:55072 to 10.0.0.1:12345	seq:3563457794(4:4) ack:12345680 PSH|ACK
+[36949]tcp_dbg_state tcpstate ESTABLISHED
+[36949]tcp_process tcpstate 1. check seq
+[36949]tcp_process tcpstate 2. check rst
+[36949]tcp_process tcpstate 3. NO check security and precedence
+[36949]tcp_process tcpstate 4. check syn
+[36949]tcp_process tcpstate 5. check ack
+[36949]tcp_process tcpstate SND.UNA 12345680 < SEG.ACK 12345680 <= SND.NXT 12345680
+[36949]tcp_process tcpstate 6. check urg
+[36949]tcp_process tcpstate 7. segment text
+[36949]tcp_process tcpstate 8. check fin
+[36949]tcp_send_ack tcp send ACK(3563457798) [WIN 4092] to 10.0.0.2:55072
+[36950]recv_tcp_packet (TCP): starting _read()...
+123
+[36949]tcp_in tcp 20 bytes, real 20 bytes
+[36949]tcp_segment_init tcp from 10.0.0.2:55072 to 10.0.0.1:12345	seq:3563457798(0:1) ack:12345680 FIN|ACK
+[36949]tcp_dbg_state tcpstate ESTABLISHED
+[36949]tcp_process tcpstate 1. check seq
+[36949]tcp_process tcpstate 2. check rst
+[36949]tcp_process tcpstate 3. NO check security and precedence
+[36949]tcp_process tcpstate 4. check syn
+[36949]tcp_process tcpstate 5. check ack
+[36949]tcp_process tcpstate SND.UNA 12345680 < SEG.ACK 12345680 <= SND.NXT 12345680
+[36949]tcp_process tcpstate 6. check urg
+[36949]tcp_process tcpstate 7. segment text
+[36949]tcp_process tcpstate 8. check fin
+[36949]tcp_set_state tcpstate State from ESTABLISHED to CLOSE-WAIT
+[36949]tcp_send_ack tcp send ACK(3563457799) [WIN 4096] to 10.0.0.2:55072
+[36950]recv_tcp_packet (TCP): last _read() return 0
+[36950]tcp_send_fin tcp send FIN(12345680)/ACK(3563457799) [WIN 4096] to 10.0.0.2:55072
+[36949]tcp_in tcp 20 bytes, real 20 bytes
+[net shell]: [36949]tcp_segment_init tcp from 10.0.0.2:55072 to 10.0.0.1:12345	seq:3563457799(0:0) ack:12345681 ACK
+[36949]tcp_lookup_sock_establish Found a socket from tcp_lookip
+[net shell]: [36949]tcp_recv found socket.
+[36949]tcp_dbg_state tcpstate LAST-ACK
+[net shell]: [36949]tcp_process tcpstate 1. check seq
+[36949]tcp_process tcpstate 2. check rst
+[net shell]: [36949]tcp_process tcpstate 3. NO check security and precedence
+[36949]tcp_process tcpstate 4. check syn
+[36949]tcp_process tcpstate 5. check ack
+[36949]tcp_process tcpstate SND.UNA 12345680 < SEG.ACK 12345681 <= SND.NXT 12345681
+[36949]tcp_set_state tcpstate State from LAST-ACK to CLOSED
+[36949]tcp_send_ack tcp send ACK(3563457799) [WIN 4096] to 10.0.0.2:55072
+```

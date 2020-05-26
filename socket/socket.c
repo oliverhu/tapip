@@ -118,8 +118,10 @@ int _bind(struct socket *sock, struct sock_addr *skaddr)
 	if (!sock || !skaddr)
 		goto out;
 	get_socket(sock);
-	if (sock->ops)
+	if (sock->ops) {
 		err = sock->ops->bind(sock, skaddr);
+	}
+	dbg("Bind socket: %d, %d", sock->sk->sk_saddr, _ntohs(sock->sk->sk_sport));
 	free_socket(sock);
 out:
 	return err;

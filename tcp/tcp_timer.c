@@ -36,6 +36,7 @@ void tcp_set_timewait_timer(struct tcp_sock *tsk)
 	tsk->timewait.next = timewait.next;
 	timewait.next = &tsk->timewait;
 	/* reference for TIME-WAIT TIMEOUT releasing */
+	dbg("get tcp socket!");
 	get_tcp_sock(tsk);
 }
 

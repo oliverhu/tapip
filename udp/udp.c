@@ -28,6 +28,7 @@ void udp_in(struct pkbuf *pkb)
 {
 	struct ip *iphdr = pkb2ip(pkb);
 	struct udp *udphdr = ip2udp(iphdr);
+	dbg("diff size -> %d", (void*)udphdr - (void*)iphdr);
 	int udplen = ipdlen(iphdr);
 
 	if (udplen < UDP_HRD_SZ || udplen < _ntohs(udphdr->length)) {
